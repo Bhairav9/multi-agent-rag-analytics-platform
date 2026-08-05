@@ -8,12 +8,10 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     llm_provider: Literal["ollama", "openai"] = "ollama"
@@ -44,8 +42,8 @@ class Settings(BaseSettings):
     demo_mode: bool = False
     low_ram: bool = Field(default=False, description="Falls back to smaller judge model")
 
+
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Return a cached settings instance."""
     return Settings()
-

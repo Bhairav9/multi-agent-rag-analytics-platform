@@ -133,6 +133,7 @@ The first call to `get_settings()` runs `Settings()` (reads `.env`, validates, b
 ```python
 app = FastAPI()
 
+
 @app.get("/healthz")
 def healthz(): ...
 ```
@@ -142,14 +143,18 @@ Everything is on one global `app`. Tests can't get a clean instance. Endpoints a
 ```python
 # routes.py
 router = APIRouter()
+
+
 @router.get("/healthz")
 def healthz(): ...
+
 
 # main.py
 def create_app() -> FastAPI:
     app = FastAPI(...)
     app.include_router(router)
     return app
+
 
 app = create_app()  # what uvicorn imports
 ```
@@ -188,11 +193,15 @@ Protocol:
 ```python
 class LLMProvider(Protocol):
     model: str
+
     async def astream(self, prompt: str) -> AsyncIterator[str]: ...
+
 
 class OpenAIProvider:  # NO inheritance
     model = "gpt-4o-mini"
+
     async def astream(self, prompt): ...
+
 
 def use(p: LLMProvider) -> None:  # accepts OpenAIProvider automatically
     ...

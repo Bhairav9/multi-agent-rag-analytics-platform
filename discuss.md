@@ -208,7 +208,7 @@ class AgentState(TypedDict):
     session_id: str
 
     # planning
-    plan: list[str]            # ordered list of agent names to invoke
+    plan: list[str]  # ordered list of agent names to invoke
     needs_web: bool
 
     # retrieval
@@ -222,11 +222,11 @@ class AgentState(TypedDict):
 
     # critic loop
     critic_feedback: str | None
-    revision_count: int        # capped at 2
+    revision_count: int  # capped at 2
 
     # observability
     trace_id: str
-    metrics: dict              # latencies, cache hits, tokens
+    metrics: dict  # latencies, cache hits, tokens
 ```
 
 Edges:

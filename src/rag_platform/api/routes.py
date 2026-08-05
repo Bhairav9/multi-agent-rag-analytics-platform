@@ -7,6 +7,7 @@ from rag_platform import __version__
 
 router = APIRouter()
 
+
 class HealthResponse(BaseModel):
     status: str
     version: str
