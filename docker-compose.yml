@@ -1,0 +1,50 @@
+services:
+  app:
+    build: .
+    container_name: rag-app
+    env_file: .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      qdrant:
+        condition: service_started
+      redis:
+        condition: service_started
+      ollama:
+        condition: service_started
+    volumes:
+      - ./src:/app/src
+      - ./data:/app/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.4
+    container_name: rag-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: rag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  ollama:
+    image: ollama/ollama:0.4.4
+    container_name: rag-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Pull models on demand via `make pull-models` — keeps first `up` fast.
+
+volumes:
+  qdrant_storage:
+  redis_data:
+  ollama_data:
+
+  
