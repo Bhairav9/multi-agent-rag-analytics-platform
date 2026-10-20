@@ -12,7 +12,7 @@ help:
 	@echo "  down          docker compose down"
 	@echo "  logs          docker compose logs -f app"
 	@echo "  pull-models   ollama pull llama3.1:8b-instruct + qwen2.5:14b-instruct"
-	@echo "  ingest        Phase 1 stub"
+	@echo "  ingest        ingest SEC filings into Qdrant (TICKERS=... YEARS=...)"
 	@echo "  eval          Phase 5 stub"
 
 install:
@@ -47,7 +47,7 @@ pull-models:
 	docker exec rag-ollama ollama pull qwen2.5:14b-instruct
 
 ingest:
-	@echo "Phase 1: python -m rag_platform.ingestion.pipeline"
+	uv run python -m rag_platform.ingestion.pipeline --tickers $(TICKERS) --years $(YEARS)
 
 eval:
 	@echo "Phase 5: python -m rag_platform.evaluation.retrieval_bench && ..."

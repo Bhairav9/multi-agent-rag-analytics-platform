@@ -27,6 +27,7 @@ dependencies = [
     "beautifulsoup4>=4.12.3",
     "httpx>=0.27.2",
     "duckduckgo-search>=6.3.5",
+    "tiktoken>=0.8.0",
     "trulens-eval>=0.33.0",
     "sentence-transformers>=3.3.0",
 ]
@@ -75,7 +76,10 @@ follow_imports = "skip"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = "-ra --strict-markers --cov=rag_platform --cov-report=term-missing --cov-report=xml"
+markers = [
+    "integration: slower tests that download real ML models (excluded by default)",
+]
+addopts = "-ra --strict-markers -m \"not integration\" --cov=rag_platform --cov-report=term-missing --cov-report=xml"
 
 [tool.coverage.run]
 branch = true

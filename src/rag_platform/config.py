@@ -42,6 +42,11 @@ class Settings(BaseSettings):
     demo_mode: bool = False
     low_ram: bool = Field(default=False, description="Falls back to smaller judge model")
 
+    sec_edgar_user_agent: str = ""
+    chunk_size_tokens: int = 500
+    chunk_overlap_tokens: int = 100
+    retrieval_top_k: int = 10
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
