@@ -42,6 +42,22 @@ services:
       - ollama_data:/root/.ollama
     # Pull models on demand via `make pull-models` — keeps first `up` fast.
 
+  streamlit:
+    build: .
+    container_name: rag-streamlit
+    command: >
+      uv run streamlit run src/rag_platform/ui/streamlit_app.py
+      --server.port 8501
+      --server.address 0.0.0.0
+      --server.headless true
+    ports:
+      - "8501:8501"
+    environment:
+      - WS_URL=ws://app:8000/ws/chat
+    depends_on:
+      - app
+    restart: unless-stopped
+
 volumes:
   qdrant_storage:
   redis_data:

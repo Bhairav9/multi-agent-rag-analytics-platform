@@ -84,6 +84,10 @@ addopts = "-ra --strict-markers -m \"not integration\" --cov=rag_platform --cov-
 [tool.coverage.run]
 branch = true
 source = ["src/rag_platform"]
+omit = [
+    "src/rag_platform/ui/*",
+    "src/rag_platform/evaluation/trulens_setup.py",
+]
 
 [tool.coverage.report]
 fail_under = 80

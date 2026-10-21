@@ -1,4 +1,4 @@
-﻿.PHONY: help install run test lint typecheck format ingest eval bench-latency bench-retrieval pull-models up down logs
+﻿.PHONY: help install run test lint typecheck format ingest eval bench-latency bench-retrieval ui pull-models up down logs
 
 help:
 	@echo "Targets:"
@@ -16,6 +16,7 @@ help:
 	@echo "  eval            run TruLens groundedness evaluation"
 	@echo "  bench-latency   cached vs uncached latency benchmark"
 	@echo "  bench-retrieval dense vs hybrid recall@10 benchmark"
+	@echo "  ui              run Streamlit UI locally (port 8501)"
 
 install:
 	uv sync --all-extras
@@ -59,3 +60,6 @@ bench-latency:
 
 bench-retrieval:
 	uv run python -m rag_platform.evaluation.retrieval_bench
+
+ui:
+	uv run streamlit run src/rag_platform/ui/streamlit_app.py --server.port 8501
