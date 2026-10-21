@@ -1,4 +1,4 @@
-﻿.PHONY: help install run test lint typecheck format ingest eval pull-models up down logs
+﻿.PHONY: help install run test lint typecheck format ingest eval bench-latency bench-retrieval pull-models up down logs
 
 help:
 	@echo "Targets:"
@@ -12,8 +12,10 @@ help:
 	@echo "  down          docker compose down"
 	@echo "  logs          docker compose logs -f app"
 	@echo "  pull-models   ollama pull llama3.1:8b-instruct + qwen2.5:14b-instruct"
-	@echo "  ingest        ingest SEC filings into Qdrant (TICKERS=... YEARS=...)"
-	@echo "  eval          Phase 5 stub"
+	@echo "  ingest          ingest SEC filings into Qdrant (TICKERS=... YEARS=...)"
+	@echo "  eval            run TruLens groundedness evaluation"
+	@echo "  bench-latency   cached vs uncached latency benchmark"
+	@echo "  bench-retrieval dense vs hybrid recall@10 benchmark"
 
 install:
 	uv sync --all-extras
@@ -50,4 +52,10 @@ ingest:
 	uv run python -m rag_platform.ingestion.pipeline --tickers $(TICKERS) --years $(YEARS)
 
 eval:
-	@echo "Phase 5: python -m rag_platform.evaluation.retrieval_bench && ..."
+	uv run python -m rag_platform.evaluation.trulens_setup
+
+bench-latency:
+	uv run python -m rag_platform.evaluation.latency_bench
+
+bench-retrieval:
+	uv run python -m rag_platform.evaluation.retrieval_bench
