@@ -103,6 +103,7 @@ The app runs on Railway with Anthropic as the LLM backend — no GPU or Ollama n
 | `ANTHROPIC_API_KEY` | your key |
 | `ANTHROPIC_MODEL` | `claude-haiku-5-5` |
 | `QDRANT_URL` | your Qdrant Cloud URL |
+| `QDRANT_API_KEY` | your Qdrant Cloud API key |
 | `REDIS_URL` | your Upstash `rediss://` URL |
 | `API_KEY` | any secret string |
 | `SEC_EDGAR_USER_AGENT` | `"FirstName LastName email@example.com"` |

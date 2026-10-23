@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     nli_model: str = "cross-encoder/nli-deberta-v3-base"
 
     qdrant_url: str = "http://qdrant:6333"
+    qdrant_api_key: str = ""
     qdrant_collection: str = "sec_filings"
 
     redis_url: str = "redis://redis:6379/0"

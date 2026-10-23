@@ -38,7 +38,10 @@ async def lifespan(app: FastAPI):
 
     # Skip heavy initialization in test mode (no Qdrant/Ollama/Redis available).
     if not os.getenv("TESTING"):
-        qdrant_client = QdrantClient(url=settings.qdrant_url)
+        qdrant_client = QdrantClient(
+            url=settings.qdrant_url,
+            api_key=settings.qdrant_api_key or None,
+        )
         store = QdrantStore(qdrant_client, settings.qdrant_collection)
         retriever = HybridRetriever(FastEmbedDense(), FastEmbedSparse(), store)
         llm = get_llm_provider()
