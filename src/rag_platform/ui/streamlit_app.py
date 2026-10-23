@@ -10,7 +10,9 @@ import uuid
 import streamlit as st
 import websockets
 
-WS_URL = os.getenv("WS_URL", "ws://localhost:8000/ws/chat")
+_WS_BASE = os.getenv("WS_URL", "ws://localhost:8000/ws/chat")
+_API_KEY = os.getenv("API_KEY", "change-me")
+WS_URL = f"{_WS_BASE}?api_key={_API_KEY}"
 
 st.set_page_config(
     page_title="RAG Analytics Platform",
@@ -38,7 +40,7 @@ with st.sidebar:
     st.markdown("**Supported tickers**")
     st.write("AAPL · MSFT · GOOGL · TSLA · JPM")
     st.divider()
-    st.caption("Powered by LangGraph + Qdrant + Ollama")
+    st.caption("Powered by LangGraph + Qdrant + Claude")
 
 # --- Main area ---
 st.title("SEC Filings Q&A")
@@ -57,31 +59,42 @@ for msg in st.session_state.messages:
 
 
 # --- WebSocket streaming ---
-async def _stream_tokens(query: str, session_id: str) -> tuple[str, list[str]]:
-    """Connect to WebSocket, collect tokens and citations, return both."""
+async def _stream(
+    query: str,
+    session_id: str,
+    text_ph,
+    status_ph,
+) -> tuple[str, list[str]]:
+    """Connect to the WebSocket and stream tokens + status updates into placeholders."""
     tokens: list[str] = []
     citations: list[str] = []
     try:
-        async with websockets.connect(WS_URL) as ws:
+        async with websockets.connect(
+            WS_URL,
+            ping_interval=20,
+            ping_timeout=300,
+            close_timeout=10,
+        ) as ws:
             await ws.send(json.dumps({"query": query, "session_id": session_id}))
             while True:
-                raw = await ws.recv()
+                raw = await asyncio.wait_for(ws.recv(), timeout=300)
                 msg = json.loads(raw)
-                if msg["type"] == "token":
+                if msg["type"] == "status":
+                    status_ph.caption(f"⏳ {msg['content']}")
+                elif msg["type"] == "token":
                     tokens.append(msg["content"])
+                    text_ph.markdown("".join(tokens) + " ▌")
                 elif msg["type"] == "done":
                     citations = msg.get("citations", [])
                     break
                 elif msg["type"] == "error":
-                    tokens.append(f"\n\n⚠️ Error: {msg['message']}")
+                    tokens.append(f"\n\n⚠️ {msg['message']}")
                     break
+    except asyncio.TimeoutError:
+        tokens.append("\n\n⚠️ Request timed out — the model is still loading. Try again.")
     except Exception as exc:
         tokens.append(f"\n\n⚠️ Could not reach the API: {exc}")
     return "".join(tokens), citations
-
-
-def _query(query: str, session_id: str) -> tuple[str, list[str]]:
-    return asyncio.run(_stream_tokens(query, session_id))
 
 
 # --- Handle new input ---
@@ -91,9 +104,16 @@ if prompt := st.chat_input("Ask about SEC filings…"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("Thinking…"):
-            answer, citations = _query(prompt, st.session_state.session_id)
-        st.markdown(answer)
+        status_ph = st.empty()
+        text_ph = st.empty()
+
+        answer, citations = asyncio.run(
+            _stream(prompt, st.session_state.session_id, text_ph, status_ph)
+        )
+
+        status_ph.empty()
+        text_ph.markdown(answer)
+
         if citations:
             with st.expander("Sources", expanded=False):
                 for i, cite in enumerate(citations, 1):

@@ -1,3 +1,8 @@
+# Logs (keep the directory, ignore the files)
+logs/*.log
+logs/*.log.*
+logs/*.log.gz
+
 # Python
 __pycache__/
 *.py[cod]

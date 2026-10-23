@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 import uuid
 
 from qdrant_client import QdrantClient
@@ -66,7 +67,17 @@ class QdrantStore:
             )
             for i in range(len(ids))
         ]
-        self._client.upsert(collection_name=self._collection, points=points)
+        batch_size = 50
+        for start in range(0, len(points), batch_size):
+            batch = points[start : start + batch_size]
+            for attempt in range(3):
+                try:
+                    self._client.upsert(collection_name=self._collection, points=batch)
+                    break
+                except Exception:
+                    if attempt == 2:
+                        raise
+                    time.sleep(2 ** attempt)
 
     def search(
         self,
@@ -74,6 +85,7 @@ class QdrantStore:
         sparse_vector: SparseVector,
         top_k: int = 10,
         prefetch_limit: int = 20,
+        query_filter=None,
     ) -> list[dict[str, object]]:
         result = self._client.query_points(
             collection_name=self._collection,
@@ -84,5 +96,6 @@ class QdrantStore:
             query=FusionQuery(fusion=Fusion.RRF),
             limit=top_k,
             with_payload=True,
+            query_filter=query_filter,
         )
         return [{"score": point.score, **(point.payload or {})} for point in result.points]
