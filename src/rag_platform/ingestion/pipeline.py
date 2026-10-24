@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import time
 from pathlib import Path
 
 import httpx
@@ -67,16 +68,24 @@ def run_pipeline(tickers: list[str], years: tuple[int, ...], raw_dir: Path) -> t
                 dense_vecs = dense.embed(texts)
                 sparse_vecs = sparse.embed(texts)
                 print(f"[{ticker}] Upserting to Qdrant...", flush=True)
-                # Fresh connection per filing: avoids stale-TCP write-timeout after
-                # the several minutes that embedding takes.
-                store = _make_store(settings)
-                store.upsert(
-                    ids=ids,
-                    texts=texts,
-                    payloads=[c.metadata for c in chunks],
-                    dense_vectors=dense_vecs,
-                    sparse_vectors=sparse_vecs,
-                )
+                # Fresh connection per attempt: avoids stale-TCP and transient DNS failures.
+                for upsert_attempt in range(5):
+                    try:
+                        store = _make_store(settings)
+                        store.upsert(
+                            ids=ids,
+                            texts=texts,
+                            payloads=[c.metadata for c in chunks],
+                            dense_vectors=dense_vecs,
+                            sparse_vectors=sparse_vecs,
+                        )
+                        break
+                    except Exception as exc:
+                        if upsert_attempt >= 4:
+                            raise
+                        wait = 15 * (2 ** upsert_attempt)
+                        print(f"  Upsert attempt {upsert_attempt + 1}/5 failed: {exc}. Retrying in {wait}s...", flush=True)
+                        time.sleep(wait)
                 n_filings += 1
                 n_chunks += len(chunks)
                 print(f"  [{ticker}] {filing.form} {filing.accession}: {len(chunks)} chunks (total {n_chunks})", flush=True)
