@@ -18,7 +18,10 @@ from rag_platform.retrieval.qdrant_store import QdrantStore
 
 def run_pipeline(tickers: list[str], years: tuple[int, ...], raw_dir: Path) -> tuple[int, int]:
     settings = get_settings()
-    store = QdrantStore(QdrantClient(url=settings.qdrant_url, timeout=120), settings.qdrant_collection)
+    store = QdrantStore(
+        QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None, timeout=120),
+        settings.qdrant_collection,
+    )
     store.ensure_collection()
     dense, sparse = FastEmbedDense(), FastEmbedSparse()
 
