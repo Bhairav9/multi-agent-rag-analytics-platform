@@ -36,7 +36,7 @@ class FastEmbedSparse:
             else SparseTextEmbedding(model_name=model_name)
         )
 
-    def embed(self, texts: list[str]) -> list[SparseVector]:
+    def embed(self, texts: list[str], batch_size: int = 32) -> list[SparseVector]:
         if not texts:
             return []
 
@@ -45,5 +45,5 @@ class FastEmbedSparse:
                 indices=[int(index) for index in vector.indices],
                 values=[float(value) for value in vector.values],
             )
-            for vector in self._model.embed(texts)
+            for vector in self._model.embed(texts, batch_size=batch_size)
         ]

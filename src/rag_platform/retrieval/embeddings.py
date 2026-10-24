@@ -26,12 +26,12 @@ class FastEmbedDense:
     ) -> None:
         self._model = model if model is not None else TextEmbedding(model_name=model_name)
 
-    def embed(self, texts: list[str]) -> list[list[float]]:
+    def embed(self, texts: list[str], batch_size: int = 32) -> list[list[float]]:
         if not texts:
             return []
 
         return [
             [float(value) for value in vector]
-            for vector in self._model.embed(texts)
+            for vector in self._model.embed(texts, batch_size=batch_size)
         ]
     
