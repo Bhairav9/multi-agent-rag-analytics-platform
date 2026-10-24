@@ -6,16 +6,16 @@ on:
       tickers:
         description: "Comma-separated tickers (e.g. AAPL,MSFT,GOOGL,TSLA,JPM)"
         required: true
-        default: "AAPL,MSFT,GOOGL,TSLA,JPM"
+        default: "AAPL,MSFT"
       years:
         description: "Comma-separated fiscal years (e.g. 2022,2023,2024)"
         required: true
-        default: "2022,2023,2024"
+        default: "2024"
 
 jobs:
   ingest:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     env:
       LLM_PROVIDER: anthropic

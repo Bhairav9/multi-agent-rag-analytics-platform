@@ -16,22 +16,33 @@ from rag_platform.retrieval.embeddings import FastEmbedDense
 from rag_platform.retrieval.qdrant_store import QdrantStore
 
 
-def run_pipeline(tickers: list[str], years: tuple[int, ...], raw_dir: Path) -> tuple[int, int]:
-    settings = get_settings()
-    store = QdrantStore(
+def _make_store(settings) -> QdrantStore:
+    """Create a fresh QdrantStore with a new connection (avoids idle-timeout on cloud NAT)."""
+    return QdrantStore(
         QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None, timeout=120),
         settings.qdrant_collection,
     )
-    store.ensure_collection()
+
+
+def run_pipeline(tickers: list[str], years: tuple[int, ...], raw_dir: Path) -> tuple[int, int]:
+    settings = get_settings()
+    # Ensure collection + payload index exist using a short-lived connection.
+    _make_store(settings).ensure_collection()
     dense, sparse = FastEmbedDense(), FastEmbedSparse()
 
     n_filings = n_chunks = 0
-    with httpx.Client(timeout=httpx.Timeout(connect=15.0, read=120.0, write=30.0, pool=30.0)) as client:
+    with httpx.Client(timeout=httpx.Timeout(connect=15.0, read=60.0, write=30.0, pool=30.0)) as client:
         for ticker in tickers:
+            print(f"[{ticker}] Looking up CIK...", flush=True)
             cik = lookup_cik(ticker, client)
-            for filing in list_filings(ticker, cik, client, years=years):
+            print(f"[{ticker}] CIK={cik}. Listing filings...", flush=True)
+            filings = list(list_filings(ticker, cik, client, years=years))
+            print(f"[{ticker}] {len(filings)} filings found.", flush=True)
+            for filing in filings:
+                print(f"[{ticker}] Downloading {filing.form} {filing.accession}...", flush=True)
                 path = download_filing(filing, client, raw_dir)
                 text = path.read_text(encoding="utf-8", errors="ignore")
+                print(f"[{ticker}] Chunking {len(text):,} chars...", flush=True)
                 chunks = chunk_filing(
                     text,
                     metadata={
@@ -45,20 +56,30 @@ def run_pipeline(tickers: list[str], years: tuple[int, ...], raw_dir: Path) -> t
                     chunk_overlap_tokens=settings.chunk_overlap_tokens,
                 )
                 if not chunks:
+                    print(f"[{ticker}] No chunks — skipping.", flush=True)
                     continue
                 ids = [
-                    store.point_id(ticker, filing.accession, str(i)) for i in range(len(chunks))
+                    QdrantStore.point_id(ticker, filing.accession, str(i))
+                    for i in range(len(chunks))
                 ]
                 texts = [c.text for c in chunks]
+                print(f"[{ticker}] Embedding {len(chunks)} chunks...", flush=True)
+                dense_vecs = dense.embed(texts)
+                sparse_vecs = sparse.embed(texts)
+                print(f"[{ticker}] Upserting to Qdrant...", flush=True)
+                # Fresh connection per filing: avoids stale-TCP write-timeout after
+                # the several minutes that embedding takes.
+                store = _make_store(settings)
                 store.upsert(
                     ids=ids,
                     texts=texts,
                     payloads=[c.metadata for c in chunks],
-                    dense_vectors=dense.embed(texts),
-                    sparse_vectors=sparse.embed(texts),
+                    dense_vectors=dense_vecs,
+                    sparse_vectors=sparse_vecs,
                 )
                 n_filings += 1
                 n_chunks += len(chunks)
+                print(f"  [{ticker}] {filing.form} {filing.accession}: {len(chunks)} chunks (total {n_chunks})", flush=True)
     return n_filings, n_chunks
 
 
