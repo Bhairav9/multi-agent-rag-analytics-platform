@@ -19,4 +19,13 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request,sys; \
         sys.exit(0 if urllib.request.urlopen('http://localhost:8000/healthz').status==200 else 1)"
 
-CMD ["uvicorn", "rag_platform.main:app", "--host", "0.0.0.0", "--port", "8000"]  
+# gunicorn + UvicornWorker: handles concurrent WebSocket connections across workers.
+# --timeout 120 matches the cold LLM pipeline latency (~87s on CPU).
+CMD ["gunicorn", "rag_platform.main:app", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--workers", "4", \
+     "--bind", "0.0.0.0:8000", \
+     "--timeout", "120", \
+     "--keep-alive", "5", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

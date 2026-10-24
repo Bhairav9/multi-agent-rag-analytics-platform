@@ -14,18 +14,22 @@ class Settings(BaseSettings):
         env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
-    llm_provider: Literal["ollama", "openai"] = "ollama"
+    llm_provider: Literal["ollama", "anthropic", "openai"] = "ollama"
     llm_model: str = "llama3.1:8b-instruct"
     ollama_base_url: str = "http://ollama:11434"
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-haiku-5-5"
     openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
 
-    embedding_provider: Literal["fastembed", "openai"] = "fastembed"
+    embedding_provider: Literal["fastembed"] = "fastembed"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
 
     judge_model: str = "qwen2.5:14b-instruct"
     nli_model: str = "cross-encoder/nli-deberta-v3-base"
 
     qdrant_url: str = "http://qdrant:6333"
+    qdrant_api_key: str = ""
     qdrant_collection: str = "sec_filings"
 
     redis_url: str = "redis://redis:6379/0"
@@ -41,6 +45,8 @@ class Settings(BaseSettings):
     app_port: int = 8000
     demo_mode: bool = False
     low_ram: bool = Field(default=False, description="Falls back to smaller judge model")
+
+    api_key: str = Field(default="change-me", description="API key for all endpoints")
 
     sec_edgar_user_agent: str = ""
     chunk_size_tokens: int = 500

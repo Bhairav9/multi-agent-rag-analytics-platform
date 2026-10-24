@@ -12,7 +12,7 @@ from rag_platform.retrieval.hybrid import RetrievedChunk
 
 
 class FakeRetriever:
-    def retrieve(self, query: str, top_k: int = 10) -> list[RetrievedChunk]:
+    def retrieve(self, query: str, top_k: int = 10, ticker: str | None = None) -> list[RetrievedChunk]:
         return [
             RetrievedChunk(
                 text="Apple's FY2024 revenue was $391 billion.",
@@ -25,13 +25,8 @@ class FakeRetriever:
 class FakeLLM:
     model = "fake"
 
-    class _FakeChatModel:
-        def with_structured_output(self, schema):
-            async def ainvoke(messages):
-                return schema(needs_web=False, reasoning="corpus is sufficient")
-            return type("StructuredLLM", (), {"ainvoke": staticmethod(ainvoke)})()
-
-    _llm = _FakeChatModel()
+    async def ainvoke_messages(self, messages) -> str:
+        return '{"needs_web": false}'
 
     async def astream(self, prompt: str) -> AsyncIterator[str]:
         if "fact-checker" in prompt:

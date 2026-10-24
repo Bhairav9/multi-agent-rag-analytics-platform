@@ -14,12 +14,14 @@ from rag_platform.llm.provider import LLMProvider
 from rag_platform.retrieval.hybrid import HybridRetriever
 
 
-def _route_after_supervisor(state: AgentState) -> str:
+def _route_supervisor(state: AgentState) -> str:
     return "web_search" if state.get("needs_web") else "retrieval"
 
 
-def _route_after_critic(state: AgentState) -> str:
-    if state.get("critic_feedback") and state.get("revision_count", 0) < MAX_REVISIONS:
+def _route_critic(state: AgentState) -> str:
+    if state.get("final_answer"):
+        return END
+    if state.get("revision_count", 0) < MAX_REVISIONS:
         return "synthesizer"
     return END
 
@@ -40,18 +42,10 @@ async def build_graph(llm: LLMProvider, retriever: HybridRetriever):
     graph.add_node("critic", critic)
 
     graph.add_edge(START, "supervisor")
-    graph.add_conditional_edges(
-        "supervisor",
-        _route_after_supervisor,
-        {"retrieval": "retrieval", "web_search": "web_search"},
-    )
-    graph.add_edge("web_search", "retrieval")
+    graph.add_conditional_edges("supervisor", _route_supervisor, ["retrieval", "web_search"])
     graph.add_edge("retrieval", "synthesizer")
+    graph.add_edge("web_search", "synthesizer")
     graph.add_edge("synthesizer", "critic")
-    graph.add_conditional_edges(
-        "critic",
-        _route_after_critic,
-        {"synthesizer": "synthesizer", END: END},
-    )
+    graph.add_conditional_edges("critic", _route_critic, ["synthesizer", END])
 
     return graph.compile()

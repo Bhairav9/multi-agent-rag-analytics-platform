@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
 import httpx
 
 from rag_platform.config import get_settings
+
+_REQUEST_DELAY = 0.5  # SEC Fair Access: >= 100ms between requests; 500ms to be safe
 
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
@@ -42,6 +45,7 @@ def _headers() -> dict[str, str]:
 
 def lookup_cik(ticker: str, client: httpx.Client) -> str:
     """Resolve a ticker symbol to a zero-padded 10-digit CIK."""
+    time.sleep(_REQUEST_DELAY)
     response = client.get(TICKERS_URL, headers=_headers())
     response.raise_for_status()
 
@@ -64,6 +68,7 @@ def list_filings(
     """Return filings filtered by form type and filing year."""
     url = SUBMISSIONS_URL.format(cik=cik)
 
+    time.sleep(_REQUEST_DELAY)
     response = client.get(url, headers=_headers())
     response.raise_for_status()
 
@@ -107,13 +112,17 @@ def download_filing(
         document=filing.primary_document,
     )
 
-    response = client.get(url, headers=_headers())
-    response.raise_for_status()
-
+    time.sleep(_REQUEST_DELAY)
     output_directory = raw_dir / filing.ticker
     output_directory.mkdir(parents=True, exist_ok=True)
-
     output_path = output_directory / f"{filing.accession}.html"
+
+    if output_path.exists():
+        return output_path
+
+    time.sleep(_REQUEST_DELAY)
+    response = client.get(url, headers=_headers())
+    response.raise_for_status()
     output_path.write_bytes(response.content)
 
     return output_path

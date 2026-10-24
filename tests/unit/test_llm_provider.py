@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import pytest
 from pydantic import ValidationError
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from rag_platform.llm.provider import OllamaProvider, get_llm_provider
 
@@ -34,6 +34,19 @@ def test_ollama_provider_streams_tokens() -> None:
     assert tokens == ["Hello", " world", "!"]
 
 
+@pytest.mark.asyncio
+async def test_ollama_ainvoke_messages_records_metrics() -> None:
+    with patch("rag_platform.llm.provider.ChatOllama") as MockChatOllama:
+        fake_response = MagicMock()
+        fake_response.content = "42 billion"
+        MockChatOllama.return_value.ainvoke = AsyncMock(return_value=fake_response)
+
+        provider = OllamaProvider(model="llama3.1:8b-instruct", base_url="http://localhost:11434")
+        result = await provider.ainvoke_messages([{"role": "user", "content": "Revenue?"}])
+
+    assert result == "42 billion"
+
+
 def test_get_llm_provider_returns_ollama(monkeypatch) -> None:
     monkeypatch.setenv("LLM_PROVIDER", "ollama")
     monkeypatch.setenv("LLM_MODEL", "llama3.1:8b-instruct")
@@ -56,6 +69,32 @@ def test_unknown_provider_raises(monkeypatch) -> None:
     get_settings.cache_clear()
 
     with pytest.raises((ValueError, ValidationError)):
+        get_llm_provider()
+
+    get_settings.cache_clear()
+
+
+def test_anthropic_provider_missing_key_raises(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+
+    from rag_platform.config import get_settings
+    get_settings.cache_clear()
+
+    with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
+        get_llm_provider()
+
+    get_settings.cache_clear()
+
+
+def test_openai_provider_missing_key_raises(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+
+    from rag_platform.config import get_settings
+    get_settings.cache_clear()
+
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
         get_llm_provider()
 
     get_settings.cache_clear()

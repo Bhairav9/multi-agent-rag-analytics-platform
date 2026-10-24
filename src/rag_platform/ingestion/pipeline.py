@@ -18,12 +18,15 @@ from rag_platform.retrieval.qdrant_store import QdrantStore
 
 def run_pipeline(tickers: list[str], years: tuple[int, ...], raw_dir: Path) -> tuple[int, int]:
     settings = get_settings()
-    store = QdrantStore(QdrantClient(url=settings.qdrant_url), settings.qdrant_collection)
+    store = QdrantStore(
+        QdrantClient(url=settings.qdrant_url, api_key=settings.qdrant_api_key or None, timeout=120),
+        settings.qdrant_collection,
+    )
     store.ensure_collection()
     dense, sparse = FastEmbedDense(), FastEmbedSparse()
 
     n_filings = n_chunks = 0
-    with httpx.Client(timeout=30.0) as client:
+    with httpx.Client(timeout=httpx.Timeout(connect=15.0, read=120.0, write=30.0, pool=30.0)) as client:
         for ticker in tickers:
             cik = lookup_cik(ticker, client)
             for filing in list_filings(ticker, cik, client, years=years):

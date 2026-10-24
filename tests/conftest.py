@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
+
+# Must be set before any rag_platform import so the lifespan skips
+# heavy service initialization (Qdrant / Ollama / Redis).
+os.environ.setdefault("TESTING", "true")
+os.environ.setdefault("SEC_EDGAR_USER_AGENT", "Test User test@example.com")
 
 import pytest
 from fastapi.testclient import TestClient

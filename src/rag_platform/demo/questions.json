@@ -1,0 +1,102 @@
+[
+  {
+    "query": "What was Apple's total revenue in FY2024?",
+    "expected_answer_contains": ["391", "billion"],
+    "relevant_chunk_ids": ["aapl-2024-item7-chunk-0"]
+  },
+  {
+    "query": "What was Apple's net income in FY2024?",
+    "expected_answer_contains": ["94", "billion"],
+    "relevant_chunk_ids": ["aapl-2024-item7-chunk-1"]
+  },
+  {
+    "query": "What risks does Apple cite regarding competition in its FY2024 10-K?",
+    "expected_answer_contains": ["competition", "market"],
+    "relevant_chunk_ids": ["aapl-2024-item1a-chunk-0"]
+  },
+  {
+    "query": "What was Apple's gross margin in FY2024?",
+    "expected_answer_contains": ["46", "percent"],
+    "relevant_chunk_ids": ["aapl-2024-item7-chunk-2"]
+  },
+  {
+    "query": "How does Apple describe its business in its FY2024 10-K?",
+    "expected_answer_contains": ["iPhone", "services"],
+    "relevant_chunk_ids": ["aapl-2024-item1-chunk-0"]
+  },
+  {
+    "query": "What was Microsoft's total revenue in FY2024?",
+    "expected_answer_contains": ["245", "billion"],
+    "relevant_chunk_ids": ["msft-2024-item7-chunk-0"]
+  },
+  {
+    "query": "What was Microsoft's cloud revenue in FY2024?",
+    "expected_answer_contains": ["cloud", "Azure"],
+    "relevant_chunk_ids": ["msft-2024-item7-chunk-1"]
+  },
+  {
+    "query": "What risks does Microsoft cite in its FY2024 10-K?",
+    "expected_answer_contains": ["cybersecurity", "competition"],
+    "relevant_chunk_ids": ["msft-2024-item1a-chunk-0"]
+  },
+  {
+    "query": "What was Microsoft's net income in FY2024?",
+    "expected_answer_contains": ["88", "billion"],
+    "relevant_chunk_ids": ["msft-2024-item7-chunk-2"]
+  },
+  {
+    "query": "How does Microsoft describe its segments in FY2024?",
+    "expected_answer_contains": ["Intelligent Cloud", "Productivity"],
+    "relevant_chunk_ids": ["msft-2024-item1-chunk-0"]
+  },
+  {
+    "query": "What was Alphabet's total revenue in FY2023?",
+    "expected_answer_contains": ["307", "billion"],
+    "relevant_chunk_ids": ["googl-2023-item7-chunk-0"]
+  },
+  {
+    "query": "What was Google's advertising revenue in FY2023?",
+    "expected_answer_contains": ["advertising", "237"],
+    "relevant_chunk_ids": ["googl-2023-item7-chunk-1"]
+  },
+  {
+    "query": "What risks does Alphabet cite regarding AI in its FY2023 10-K?",
+    "expected_answer_contains": ["artificial intelligence", "competition"],
+    "relevant_chunk_ids": ["googl-2023-item1a-chunk-0"]
+  },
+  {
+    "query": "What was Alphabet's net income in FY2023?",
+    "expected_answer_contains": ["73", "billion"],
+    "relevant_chunk_ids": ["googl-2023-item7-chunk-2"]
+  },
+  {
+    "query": "What was Tesla's total revenue in FY2023?",
+    "expected_answer_contains": ["97", "billion"],
+    "relevant_chunk_ids": ["tsla-2023-item7-chunk-0"]
+  },
+  {
+    "query": "What was Tesla's automotive revenue in FY2023?",
+    "expected_answer_contains": ["automotive", "82"],
+    "relevant_chunk_ids": ["tsla-2023-item7-chunk-1"]
+  },
+  {
+    "query": "What risks does Tesla cite regarding production in its FY2023 10-K?",
+    "expected_answer_contains": ["manufacturing", "supply chain"],
+    "relevant_chunk_ids": ["tsla-2023-item1a-chunk-0"]
+  },
+  {
+    "query": "What was Tesla's net income in FY2023?",
+    "expected_answer_contains": ["15", "billion"],
+    "relevant_chunk_ids": ["tsla-2023-item7-chunk-2"]
+  },
+  {
+    "query": "What was JPMorgan Chase's total revenue in FY2023?",
+    "expected_answer_contains": ["158", "billion"],
+    "relevant_chunk_ids": ["jpm-2023-item7-chunk-0"]
+  },
+  {
+    "query": "What risks does JPMorgan cite regarding interest rates in its FY2023 10-K?",
+    "expected_answer_contains": ["interest rate", "credit"],
+    "relevant_chunk_ids": ["jpm-2023-item1a-chunk-0"]
+  }
+]

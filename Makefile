@@ -1,4 +1,4 @@
-﻿.PHONY: help install run test lint typecheck format ingest eval pull-models up down logs
+﻿.PHONY: help install run test lint typecheck format ingest eval bench-latency bench-retrieval ui pull-models up down logs
 
 help:
 	@echo "Targets:"
@@ -8,12 +8,15 @@ help:
 	@echo "  lint          ruff check"
 	@echo "  format        ruff format"
 	@echo "  typecheck     mypy"
-	@echo "  up            docker compose up -d"
-	@echo "  down          docker compose down"
-	@echo "  logs          docker compose logs -f app"
+	@echo "  up            podman compose up -d"
+	@echo "  down          podman compose down"
+	@echo "  logs          podman compose logs -f app"
 	@echo "  pull-models   ollama pull llama3.1:8b-instruct + qwen2.5:14b-instruct"
-	@echo "  ingest        ingest SEC filings into Qdrant (TICKERS=... YEARS=...)"
-	@echo "  eval          Phase 5 stub"
+	@echo "  ingest          ingest SEC filings into Qdrant (TICKERS=... YEARS=...)"
+	@echo "  eval            run TruLens groundedness evaluation"
+	@echo "  bench-latency   cached vs uncached latency benchmark"
+	@echo "  bench-retrieval dense vs hybrid recall@10 benchmark"
+	@echo "  ui              run Streamlit UI locally (port 8501)"
 
 install:
 	uv sync --all-extras
@@ -34,20 +37,32 @@ typecheck:
 	uv run mypy src
 
 up:
-	docker compose up -d --build
+	podman compose up -d --build
 
 down:
-	docker compose down
+	podman compose down
 
 logs:
-	docker compose logs -f app
+	podman compose logs -f app
 
 pull-models:
-	docker exec rag-ollama ollama pull llama3.1:8b-instruct
-	docker exec rag-ollama ollama pull qwen2.5:14b-instruct
+	podman exec rag-ollama ollama pull llama3.1:8b
+	podman exec rag-ollama ollama pull qwen2.5:14b
 
 ingest:
-	uv run python -m rag_platform.ingestion.pipeline --tickers $(TICKERS) --years $(YEARS)
+	podman exec rag-app python -m rag_platform.ingestion.pipeline --tickers $(TICKERS) --years $(YEARS)
+
+ingest-local:
+	QDRANT_URL=http://localhost:6333 uv run python -m rag_platform.ingestion.pipeline --tickers $(TICKERS) --years $(YEARS)
 
 eval:
-	@echo "Phase 5: python -m rag_platform.evaluation.retrieval_bench && ..."
+	uv run python -m rag_platform.evaluation.trulens_setup
+
+bench-latency:
+	uv run python -m rag_platform.evaluation.latency_bench
+
+bench-retrieval:
+	uv run python -m rag_platform.evaluation.retrieval_bench
+
+ui:
+	uv run streamlit run src/rag_platform/ui/streamlit_app.py --server.port 8501

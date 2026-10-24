@@ -15,6 +15,7 @@ dependencies = [
     "langchain>=0.3.7",
     "langchain-core>=0.3.15",
     "langchain-ollama>=0.2.0",
+    "anthropic>=1.0.0",
     "langchain-community>=0.3.5",
     "qdrant-client>=1.12.0",
     "fastembed>=0.4.1",
@@ -29,7 +30,9 @@ dependencies = [
     "duckduckgo-search>=6.3.5",
     "tiktoken>=0.8.0",
     "trulens-eval>=0.33.0",
-    "sentence-transformers>=3.3.0",
+    "prometheus-fastapi-instrumentator>=7.0.0",
+    "gunicorn>=23.0.0",
+    "sentence-transformers>=3.3.0,<4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -84,6 +87,10 @@ addopts = "-ra --strict-markers -m \"not integration\" --cov=rag_platform --cov-
 [tool.coverage.run]
 branch = true
 source = ["src/rag_platform"]
+omit = [
+    "src/rag_platform/ui/*",
+    "src/rag_platform/evaluation/trulens_setup.py",
+]
 
 [tool.coverage.report]
 fail_under = 80

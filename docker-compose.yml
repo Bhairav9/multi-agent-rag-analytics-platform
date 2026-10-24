@@ -3,18 +3,32 @@ services:
     build: .
     container_name: rag-app
     env_file: .env
+    command: >
+      sh -c "pip install 'anthropic>=1.0.0' 'prometheus-fastapi-instrumentator>=7.0.0' 'gunicorn>=23.0.0' --quiet --no-cache-dir &&
+             gunicorn rag_platform.main:app
+             --worker-class uvicorn.workers.UvicornWorker
+             --workers 4
+             --bind 0.0.0.0:8000
+             --timeout 120
+             --keep-alive 5
+             --access-logfile -
+             --error-logfile -"
     ports:
       - "8000:8000"
     depends_on:
       qdrant:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+      # ollama is only needed when LLM_PROVIDER=ollama.
+      # Remove or comment out this block when deploying with openai or anthropic.
       ollama:
         condition: service_started
     volumes:
       - ./src:/app/src
       - ./data:/app/data
+      - ./logs:/app/logs
+      - fastembed_cache:/root/.cache/fastembed
 
   qdrant:
     image: qdrant/qdrant:v1.12.4
@@ -24,14 +38,26 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "(echo > /dev/tcp/localhost/6333) 2>/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   redis:
     image: redis:7.4-alpine
     container_name: rag-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   ollama:
     image: ollama/ollama:0.4.4
@@ -42,9 +68,64 @@ services:
       - ollama_data:/root/.ollama
     # Pull models on demand via `make pull-models` — keeps first `up` fast.
 
+  streamlit:
+    build: .
+    container_name: rag-streamlit
+    command: >
+      python -m streamlit run src/rag_platform/ui/streamlit_app.py
+      --server.port 8501
+      --server.address 0.0.0.0
+      --server.headless true
+    ports:
+      - "8501:8501"
+    environment:
+      - WS_URL=ws://app:8000/ws/chat
+      - API_KEY=change-me
+    volumes:
+      - ./src:/app/src
+    depends_on:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8501/_stcore/health').status==200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: rag-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    depends_on:
+      - app
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: rag-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
 volumes:
   qdrant_storage:
   redis_data:
   ollama_data:
+  fastembed_cache:
+  prometheus_data:
+  grafana_data:
 
   
