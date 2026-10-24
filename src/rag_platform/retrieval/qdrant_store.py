@@ -10,6 +10,7 @@ from qdrant_client.models import (
     Distance,
     Fusion,
     FusionQuery,
+    PayloadSchemaType,
     PointStruct,
     Prefetch,
     SparseVector,
@@ -29,14 +30,19 @@ class QdrantStore:
         self._collection = collection
 
     def ensure_collection(self, dense_dim: int = 384) -> None:
-        if self._client.collection_exists(self._collection):
-            return
-        self._client.create_collection(
+        if not self._client.collection_exists(self._collection):
+            self._client.create_collection(
+                collection_name=self._collection,
+                vectors_config={
+                    DENSE_VECTOR_NAME: VectorParams(size=dense_dim, distance=Distance.COSINE)
+                },
+                sparse_vectors_config={SPARSE_VECTOR_NAME: SparseVectorParams()},
+            )
+        # Cloud Qdrant requires explicit payload index for filtered searches.
+        self._client.create_payload_index(
             collection_name=self._collection,
-            vectors_config={
-                DENSE_VECTOR_NAME: VectorParams(size=dense_dim, distance=Distance.COSINE)
-            },
-            sparse_vectors_config={SPARSE_VECTOR_NAME: SparseVectorParams()},
+            field_name="ticker",
+            field_schema=PayloadSchemaType.KEYWORD,
         )
 
     @staticmethod
@@ -67,7 +73,7 @@ class QdrantStore:
             )
             for i in range(len(ids))
         ]
-        batch_size = 50
+        batch_size = 10
         for start in range(0, len(points), batch_size):
             batch = points[start : start + batch_size]
             for attempt in range(3):
